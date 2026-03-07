@@ -7,7 +7,11 @@ import sharp from 'sharp'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
-
+import { Blog } from './collections/Blog'
+import { Workflows } from './collections/Workflows'
+import { WorkflowLogs } from './collections/WorkflowLogs'
+import { Contract } from './collections/Contract'
+import { workflowRouter } from './plugins/workflowAPI'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
@@ -18,7 +22,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media],
+  collections: [Users, Workflows, WorkflowLogs, Blog, Contract],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
