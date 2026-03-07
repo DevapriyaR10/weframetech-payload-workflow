@@ -4,12 +4,12 @@ A dynamic workflow management system built using Payload CMS and TypeScript.
 This system allows administrators to create workflows with multiple approval steps, assign roles, and track workflow execution with audit logs.
 
 Features:
-Create dynamic workflows
-Support multi-step approvals
-Assign users or roles to workflow steps
-Conditional workflow logic
-Workflow audit logs
-Custom APIs to start workflows and process approvals
+1) Create dynamic workflows
+2) Support multi-step approvals
+3) Assign users or roles to workflow steps
+4) Conditional workflow logic
+5) Workflow audit logs
+6) Custom APIs to start workflows and process approvals
 
 Tech Stack:
 Node.js
@@ -63,3 +63,4 @@ Workflow visualization
 Role-based workflow assignments
 Parallel approvals
 Workflow analytics dashboard
+
