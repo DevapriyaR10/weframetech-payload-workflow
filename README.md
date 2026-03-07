@@ -1,4 +1,4 @@
-Dynamic Workflow Management System
+*Dynamic Workflow Management System*
 
 A dynamic workflow management system built using Payload CMS and TypeScript.
 This system allows administrators to create workflows with multiple approval steps, assign roles, and track workflow execution with audit logs.
@@ -39,22 +39,12 @@ Payload admin panel will be available at:
 http://localhost:3000/admin
 
 Workflow Process
-Create a workflow definition
-Add workflow steps
-Assign approvers or roles
-Start a workflow instance
-Approvers can approve or reject steps
-Every action is recorded in workflow logs
-
-Example Workflow
-
-Employee Request
-      ↓
-Manager Approval
-      ↓
-Finance Approval
-      ↓
-Completed
+1) Create a workflow definition
+2) Add workflow steps
+3) Assign approvers or roles
+4) Start a workflow instance
+5) Approvers can approve or reject steps
+6) Every action is recorded in workflow logs
 
 
 Future Improvements
@@ -63,4 +53,5 @@ Workflow visualization
 Role-based workflow assignments
 Parallel approvals
 Workflow analytics dashboard
+
 
