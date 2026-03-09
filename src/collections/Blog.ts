@@ -41,7 +41,7 @@ export const Blog: CollectionConfig = {
       required: true,
       admin: {
         components: {
-          Field: lexicalEditor, // ensures it works in prod
+          Field: lexicalEditor, // ensures it works in production
         },
       },
     },
@@ -62,15 +62,11 @@ export const Blog: CollectionConfig = {
       async ({ doc, req }) => {
         if (!doc) return console.warn('[Blog Hook] No document in afterChange hook')
 
-        console.log('[Blog Hook] afterChange fired for doc:', doc.id)
-
         const payloadInstance = req?.payload || payload
 
         try {
-          // Explicit collection slug
           await triggerWorkflow(doc, payloadInstance, req, 'blog')
         } catch (err) {
-          // Log errors but don't break admin
           console.error('[Blog Hook] Workflow trigger failed:', err)
         }
       },
