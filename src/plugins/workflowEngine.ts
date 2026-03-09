@@ -58,7 +58,6 @@ export const triggerWorkflow = async (
           const docValue = doc[cond.field]
           const val = typeof cond.value === 'string' && !isNaN(Number(cond.value)) ? Number(cond.value) : cond.value
 
-          // Log comparison
           console.log(`[Workflow Debug] Condition: doc[${cond.field}] = ${docValue} ${cond.operator} ${val}`)
 
           switch (cond.operator) {
@@ -149,3 +148,39 @@ export const triggerWorkflow = async (
     }
   }
 }
+
+/**
+ * Get workflow status for a document
+ */
+export const getWorkflowStatus = async (
+  payload: BasePayload,
+  workflowId: string,
+  docId: string
+) => {
+  if (!payload) return null
+
+  try {
+    const logsRes = await payload.find({
+      collection: 'workflowLogs' as any,
+      where: {
+        workflow: { equals: workflowId },
+        documentId: { equals: String(docId) },
+      },
+      overrideAccess: true,
+    })
+
+    return logsRes.docs.map(log => ({
+      stepName: log.stepName,
+      status: log.action,
+      user: log.user,
+      createdAt: log.createdAt,
+      updatedAt: log.updatedAt,
+    }))
+  } catch (err) {
+    console.error('[Workflow] Failed to fetch workflow status:', err)
+    return null
+  }
+}
+
+// Export both for usage
+export { triggerWorkflow, getWorkflowStatus }
