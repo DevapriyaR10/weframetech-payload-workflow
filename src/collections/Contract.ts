@@ -1,6 +1,6 @@
-import type { CollectionConfig } from 'payload'
+// src/collections/Contract.ts
+import type { CollectionConfig, PayloadRequest } from 'payload'
 import { triggerWorkflow } from '../plugins/workflowEngine'
-import payload from 'payload'
 
 export const Contract: CollectionConfig = {
   slug: 'contract',
@@ -56,7 +56,7 @@ export const Contract: CollectionConfig = {
       label: 'Workflow Panel',
       admin: {
         components: {
-          Field: '@/components/WorkflowPanel', // your workflow panel component
+          Field: '@/components/WorkflowPanel',
         },
       },
     },
@@ -64,15 +64,17 @@ export const Contract: CollectionConfig = {
 
   hooks: {
     afterChange: [
-      async ({ doc, req }) => {
-        if (!doc) return console.warn('[Contract Hook] No document in afterChange hook')
+      async ({ doc, req }: { doc: any; req: PayloadRequest }) => {
+        if (!doc || !req?.payload) {
+          return console.warn('[Contract Hook] No document or payload instance')
+        }
 
         console.log('[Contract Hook] afterChange fired for doc:', doc.id)
 
-        const payloadInstance = req?.payload || payload
         try {
-          // Explicitly pass 'contract' as collection slug
-          await triggerWorkflow(doc, payloadInstance, req, 'contract')
+          // TS-safe call: payload, collectionSlug, docId, optional doc
+          await triggerWorkflow(req.payload, 'contract', doc.id, doc)
+          console.log('[Contract Hook] Workflow triggered for contract draft:', doc.id)
         } catch (err) {
           console.error('[Contract Hook] Workflow trigger failed:', err)
         }
