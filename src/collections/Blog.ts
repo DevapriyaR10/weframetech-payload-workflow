@@ -1,14 +1,11 @@
 import type { CollectionConfig } from 'payload'
 import payload from 'payload'
 import { triggerWorkflow } from '../plugins/workflowEngine'
-import BlogLexicalField from '../components/BlogLexicalField'
+import { lexicalEditor } from '@payloadcms/richtext-lexical'
 
 export const Blog: CollectionConfig = {
   slug: 'blog',
-  admin: {
-    useAsTitle: 'title',
-    defaultColumns: ['title', 'status'],
-  },
+  admin: { useAsTitle: 'title', defaultColumns: ['title', 'status'] },
 
   access: {
     read: ({ req }) => req.user ? ['admin','reviewer','approver'].includes(req.user.role) : false,
@@ -18,11 +15,7 @@ export const Blog: CollectionConfig = {
   },
 
   fields: [
-    {
-      name: 'title',
-      type: 'text',
-      required: true,
-    },
+    { name: 'title', type: 'text', required: true },
     {
       name: 'status',
       type: 'select',
@@ -41,7 +34,7 @@ export const Blog: CollectionConfig = {
       required: true,
       admin: {
         components: {
-          Field: BlogLexicalField, // TS-safe wrapper
+          Field: (props) => lexicalEditor(props), // Render + TS safe
         },
       },
     },
@@ -50,7 +43,7 @@ export const Blog: CollectionConfig = {
       type: 'ui',
       admin: {
         components: {
-          Field: '../../components/WorkflowPanel', // relative path for Render
+          Field: '../../components/WorkflowPanel', // relative path works on Render
         },
       },
     },
