@@ -1,7 +1,6 @@
 import type { CollectionConfig } from 'payload'
-import payload from 'payload'
 import { triggerWorkflow } from '../plugins/workflowEngine'
-import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import payload from 'payload'
 
 export const Blog: CollectionConfig = {
   slug: 'blog',
@@ -21,32 +20,19 @@ export const Blog: CollectionConfig = {
       type: 'select',
       options: [
         { label: 'Draft', value: 'draft' },
-        { label: 'Published', value: 'published' },
+        { label: 'Published', value: 'published' }
       ],
       defaultValue: 'draft',
       access: {
-        update: ({ req }) => req.user ? ['admin','approver'].includes(req.user.role) : false,
-      },
+        update: ({ req }) => req.user ? ['admin','approver'].includes(req.user.role) : false
+      }
     },
-    {
-      name: 'content',
-      type: 'richText',
-      required: true,
-      admin: {
-        components: {
-          Field: (props) => lexicalEditor(props), // Render + TS safe
-        },
-      },
-    },
+    { name: 'content', type: 'richText', required: true },
     {
       name: 'workflowPanel',
       type: 'ui',
-      admin: {
-        components: {
-          Field: '../../components/WorkflowPanel', // relative path works on Render
-        },
-      },
-    },
+      admin: { components: { Field: '@/components/WorkflowPanel' } },
+    }
   ],
 
   hooks: {
@@ -54,14 +40,17 @@ export const Blog: CollectionConfig = {
       async ({ doc, req }) => {
         if (!doc) return console.warn('[Blog Hook] No document in afterChange hook')
 
+        console.log('[Blog Hook] afterChange fired for doc:', doc.id)
+
         const payloadInstance = req?.payload || payload
 
         try {
+          // Pass collection slug explicitly
           await triggerWorkflow(doc, payloadInstance, req, 'blog')
         } catch (err) {
           console.error('[Blog Hook] Workflow trigger failed:', err)
         }
-      },
-    ],
+      }
+    ]
   },
 }
