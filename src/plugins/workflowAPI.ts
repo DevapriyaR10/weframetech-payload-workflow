@@ -48,7 +48,7 @@ export const workflowStatusEndpoint: Endpoint = {
       return Response.json({ error: 'docId required' }, { status: 400 })
     }
 
-    const status = await getWorkflowStatus(docId, req) 
+    const status = await getWorkflowStatus(docId, req) // ✅ docId is string now
 
     return Response.json(status)
   },
