@@ -1,3 +1,4 @@
+// src/collections/Workflows.ts
 import type { CollectionConfig } from 'payload'
 
 export const Workflows: CollectionConfig = {
@@ -7,45 +8,56 @@ export const Workflows: CollectionConfig = {
     defaultColumns: ['name', 'collection'],
   },
 
-  // --- Type-safe access rules ---
   access: {
     read: ({ req }) => {
       const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
       return user ? ['admin', 'reviewer', 'approver'].includes(user.role!) : false
     },
-    create: ({ req }) => {
-      const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
-      return user?.role === 'admin'
-    },
-    update: ({ req }) => {
-      const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
-      return user?.role === 'admin'
-    },
-    delete: ({ req }) => {
-      const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
-      return user?.role === 'admin'
-    },
+    create: ({ req }) => req.user?.role === 'admin',
+    update: ({ req }) => req.user?.role === 'admin',
+    delete: ({ req }) => req.user?.role === 'admin',
   },
 
   fields: [
-    { name: 'name', type: 'text', required: true },
+    {
+      name: 'name',
+      type: 'text',
+      required: true,
+    },
     {
       name: 'collection',
       type: 'text',
       required: true,
-      admin: { description: 'Collection slug this workflow applies to' },
+      admin: {
+        description: 'Collection slug this workflow applies to',
+      },
     },
+
     {
       name: 'steps',
       type: 'array',
-      minRows: 1,
       label: 'Workflow Steps',
+      minRows: 1,
       fields: [
-        { name: 'name', type: 'text', required: true, label: 'Step Name' },
-        { name: 'assignee', type: 'relationship', relationTo: 'users', required: true },
+        {
+          name: 'name',
+          type: 'text',
+          required: true,
+          label: 'Step Name',
+        },
+        {
+          name: 'assignee',
+          type: 'relationship',
+          relationTo: 'users',
+          required: true,
+          admin: {
+            description: 'User assigned to this step',
+          },
+        },
         {
           name: 'role',
           type: 'select',
+          required: true,
           options: [
             { label: 'Admin', value: 'admin' },
             { label: 'Reviewer', value: 'reviewer' },
@@ -73,6 +85,7 @@ export const Workflows: CollectionConfig = {
             {
               name: 'operator',
               type: 'select',
+              required: true,
               options: [
                 { label: '=', value: 'eq' },
                 { label: '!=', value: 'neq' },
