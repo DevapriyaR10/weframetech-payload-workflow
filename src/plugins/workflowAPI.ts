@@ -23,7 +23,7 @@ export const workflowStatusEndpoint: Endpoint = {
     try {
       // 3️⃣ Fetch workflows for the collection
       const workflowsRes = await req.payload.find({
-        collection: 'workflows',
+        collection: 'workflows' as any, // ✅ TS bypass for custom collection
         where: { collection: { equals: collection } },
         depth: 2,
         overrideAccess: true,
