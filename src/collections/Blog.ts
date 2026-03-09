@@ -60,15 +60,15 @@ export const Blog: CollectionConfig = {
 
     // Workflow Panel (UI component)
     {
-      name: 'workflowPanel',
-      type: 'ui',
-      admin: {
-        components: {
-          Field: '@/components/WorkflowPanel',
-        },
-        description: 'Visual workflow panel for blog approval process',
-      },
+  name: 'workflowPanel',
+  type: 'ui',
+  label: 'Workflow Panel',
+  admin: {
+    components: {
+      Field: '@/components/WorkflowPanel',
     },
+  },
+}
   ],
 
   hooks: {
