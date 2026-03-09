@@ -1,10 +1,14 @@
 import type { CollectionConfig } from 'payload'
+import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { triggerWorkflow } from '../plugins/workflowEngine'
 import payload from 'payload'
 
 export const Blog: CollectionConfig = {
   slug: 'blog',
-  admin: { useAsTitle: 'title', defaultColumns: ['title', 'status'] },
+  admin: {
+    useAsTitle: 'title',
+    defaultColumns: ['title', 'status'],
+  },
 
   access: {
     read: ({ req }) => req.user ? ['admin','reviewer','approver'].includes(req.user.role) : false,
@@ -14,25 +18,42 @@ export const Blog: CollectionConfig = {
   },
 
   fields: [
-    { name: 'title', type: 'text', required: true },
+    {
+      name: 'title',
+      type: 'text',
+      required: true,
+    },
     {
       name: 'status',
       type: 'select',
       options: [
         { label: 'Draft', value: 'draft' },
-        { label: 'Published', value: 'published' }
+        { label: 'Published', value: 'published' },
       ],
       defaultValue: 'draft',
       access: {
-        update: ({ req }) => req.user ? ['admin','approver'].includes(req.user.role) : false
-      }
+        update: ({ req }) => req.user ? ['admin','approver'].includes(req.user.role) : false,
+      },
     },
-    { name: 'content', type: 'richText', required: true },
+    {
+      name: 'content',
+      type: 'richText',
+      required: true,
+      admin: {
+        components: {
+          Field: lexicalEditor, // Proper rich text editor
+        },
+      },
+    },
     {
       name: 'workflowPanel',
       type: 'ui',
-      admin: { components: { Field: '@/components/WorkflowPanel' } },
-    }
+      admin: {
+        components: {
+          Field: '@/components/WorkflowPanel', // Your custom panel
+        },
+      },
+    },
   ],
 
   hooks: {
@@ -45,12 +66,12 @@ export const Blog: CollectionConfig = {
         const payloadInstance = req?.payload || payload
 
         try {
-          // Pass collection slug explicitly
+          // Explicitly pass collection slug
           await triggerWorkflow(doc, payloadInstance, req, 'blog')
         } catch (err) {
           console.error('[Blog Hook] Workflow trigger failed:', err)
         }
-      }
-    ]
+      },
+    ],
   },
 }
