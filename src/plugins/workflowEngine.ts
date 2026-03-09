@@ -1,5 +1,5 @@
 // src/plugins/workflowEngine.ts
-import type { Payload } from 'payload'
+import type { BasePayload, PayloadRequest } from 'payload'
 
 type Condition = {
   field: string
@@ -22,22 +22,23 @@ type Workflow = {
  * Trigger workflow steps for a document
  */
 export const triggerWorkflow = async (
-  doc: Record<string, any>,
-  payload: Payload,
-  req?: any,
-  collectionSlug?: string
+  payload: BasePayload,       // Use BasePayload from hooks
+  collectionSlug: string,     // Collection slug of the document
+  docId: string,              // Document ID
+  docData?: Record<string, any> // Optional full document
 ) => {
   if (!payload) return console.warn('[Workflow] Payload instance missing')
 
-  const slug = collectionSlug || doc._collection || doc.collection
-  if (!slug) return console.warn('[Workflow] Document collection not found')
+  const doc = docData || (await payload.findByID({ collection: collectionSlug as any, id: docId }))
 
-  console.log('[Workflow] Triggering workflow for document:', doc.id, 'in collection:', slug)
+  if (!doc) return console.warn('[Workflow] Document not found')
 
-  // ✅ TS-safe: use `as any` for custom collections
+  console.log('[Workflow] Triggering workflow for document:', doc.id, 'in collection:', collectionSlug)
+
+  // Fetch workflows for this collection
   const workflowsRes = await payload.find({
     collection: 'workflows' as any,
-    where: { collection: { equals: slug } },
+    where: { collection: { equals: collectionSlug } },
     depth: 2,
     overrideAccess: true,
   })
@@ -92,7 +93,7 @@ export const triggerWorkflow = async (
           data: {
             workflow: workflow.id,
             documentId: String(doc.id),
-            collection: slug,
+            collection: collectionSlug,
             stepName: step.name,
             user: typeof step.assignee === 'string' ? step.assignee : step.assignee.id,
             action: 'pending',
@@ -142,7 +143,7 @@ export const triggerWorkflow = async (
  * Get workflow status for a document
  */
 export const getWorkflowStatus = async (
-  payload: Payload,
+  payload: BasePayload,
   workflowId: string,
   docId: string
 ) => {
