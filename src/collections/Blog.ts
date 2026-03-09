@@ -71,26 +71,23 @@ export const Blog: CollectionConfig = {
   ],
 
   hooks: {
-    afterChange: [
-      async ({ doc, req }) => {
-        if (!doc) return
+  afterChange: [
+    async ({ doc, req }) => {
+      if (!doc) return
 
-        console.log('[Blog Hook] afterChange fired for doc:', doc.id)
+      const payloadInstance = req?.payload || payload
 
-        try {
-          const payloadInstance = req?.payload || payload
-
-          // Only trigger workflow for drafts
-          if (doc.status === 'draft') {
-            await triggerWorkflow(doc.id, 'blog', req)
-            console.log('[Blog Hook] Workflow triggered for blog draft:', doc.id)
-          } else {
-            console.log('[Blog Hook] Blog status not draft, skipping workflow')
-          }
-        } catch (err) {
-          console.error('[Blog Hook] Workflow trigger failed:', err)
+      try {
+        if (doc.status === 'draft') {
+          await triggerWorkflow(payloadInstance, req, 'blog', doc.id)
+          console.log('[Blog Hook] Workflow triggered for blog draft:', doc.id)
+        } else {
+          console.log('[Blog Hook] Blog status not draft, skipping workflow')
         }
-      },
-    ],
-  },
+      } catch (err) {
+        console.error('[Blog Hook] Workflow trigger failed:', err)
+      }
+    },
+  ],
+},
 }
