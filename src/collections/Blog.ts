@@ -1,9 +1,6 @@
 import type { CollectionConfig } from 'payload'
-import payload from 'payload'
 import { triggerWorkflow } from '../plugins/workflowEngine'
-
-// Import WorkflowPanel React component directly
-import WorkflowPanel from '../components/WorkflowPanel'
+import payload from 'payload'
 
 export const Blog: CollectionConfig = {
   slug: 'blog',
@@ -30,40 +27,30 @@ export const Blog: CollectionConfig = {
         update: ({ req }) => req.user ? ['admin','approver'].includes(req.user.role) : false
       }
     },
-    {
-      name: 'content',
-      type: 'richText',
-      admin: {
-        // Optional: Lexical editor if you want advanced editing
-        // components: { Field: lexicalEditor },
-      },
-      required: true
-    },
+    { name: 'content', type: 'richText', required: true },
     {
       name: 'workflowPanel',
       type: 'ui',
-      admin: {
-        components: { Field: WorkflowPanel }, // Pass imported React component
-      }
+      admin: { components: { Field: '@/components/WorkflowPanel' } },
     }
   ],
 
   hooks: {
     afterChange: [
       async ({ doc, req }) => {
-        if (!doc) return console.warn('[Blog Hook] No document in afterChange hook');
+        if (!doc) return console.warn('[Blog Hook] No document in afterChange hook')
 
-        console.log('[Blog Hook] afterChange fired for doc:', doc.id);
+        console.log('[Blog Hook] afterChange fired for doc:', doc.id)
 
-        const payloadInstance = req?.payload || payload;
+        const payloadInstance = req?.payload || payload
 
         try {
           // Pass collection slug explicitly
-          await triggerWorkflow(doc, payloadInstance, req, 'blog');
+          await triggerWorkflow(doc, payloadInstance, req, 'blog')
         } catch (err) {
-          console.error('[Blog Hook] Workflow trigger failed:', err);
+          console.error('[Blog Hook] Workflow trigger failed:', err)
         }
       }
     ]
   },
-};
+}
