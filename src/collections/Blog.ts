@@ -41,7 +41,7 @@ export const Blog: CollectionConfig = {
       required: true,
       admin: {
         components: {
-          Field: lexicalEditor, // Proper rich text editor
+          Field: lexicalEditor, // ensures it works in prod
         },
       },
     },
@@ -49,8 +49,9 @@ export const Blog: CollectionConfig = {
       name: 'workflowPanel',
       type: 'ui',
       admin: {
+        // Use relative path so Render can resolve it
         components: {
-          Field: '@/components/WorkflowPanel', // Your custom panel
+          Field: '../../components/WorkflowPanel',
         },
       },
     },
@@ -66,9 +67,10 @@ export const Blog: CollectionConfig = {
         const payloadInstance = req?.payload || payload
 
         try {
-          // Explicitly pass collection slug
+          // Explicit collection slug
           await triggerWorkflow(doc, payloadInstance, req, 'blog')
         } catch (err) {
+          // Log errors but don't break admin
           console.error('[Blog Hook] Workflow trigger failed:', err)
         }
       },
