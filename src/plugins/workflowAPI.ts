@@ -1,60 +1,56 @@
 // src/plugins/workflowAPI.ts
-import { Router } from 'express'
-import type { Endpoint, CollectionSlug, PayloadRequest } from 'payload'
-import { triggerWorkflow } from './workflowEngine'
-import { getWorkflowStatus } from './workflowEngine' // assume you have this function
+import type { Endpoint, PayloadRequest } from 'payload'
+import { getWorkflowStatus } from './workflowEngine'
 
-// Define request body type for triggering workflow
-type TriggerWorkflowBody = {
-  docId: string
-  collection: CollectionSlug
-}
-
-// Trigger Workflow Endpoint
-export const triggerWorkflowEndpoint: Endpoint = {
-  path: '/workflows/trigger',
-  method: 'post',
-  handler: async (req) => {
-    const body = await req.json?.() as Partial<TriggerWorkflowBody>
-    const { docId, collection } = body || {}
-
-    if (!docId || !collection) {
-      return Response.json({ error: 'docId and collection required' }, { status: 400 })
-    }
-
-    const doc = await req.payload.findByID({
-      collection,
-      id: docId,
-    })
-
-    if (!doc) {
-      return Response.json({ error: 'Document not found' }, { status: 404 })
-    }
-
-    await triggerWorkflow(doc as any, collection, req)
-
-    return Response.json({ success: true })
-  },
-}
-
-// Workflow Status Endpoint
 export const workflowStatusEndpoint: Endpoint = {
   path: '/workflows/status/:docId',
   method: 'get',
-  handler: async (req) => {
-    const docId = req.routeParams?.docId
-
-    if (!docId || typeof docId !== 'string') {
-      return Response.json({ error: 'docId required' }, { status: 400 })
+  handler: async (req: PayloadRequest) => {
+    // 1️⃣ Validate docId
+    const docIdRaw = req.routeParams?.docId
+    if (!docIdRaw || typeof docIdRaw !== 'string') {
+      return new Response(JSON.stringify({ error: 'docId required in URL' }), { status: 400 })
     }
+    const docId: string = docIdRaw
 
-    const status = await getWorkflowStatus(docId, req) // ✅ docId is string now
+    // 2️⃣ Validate collection query param
+    const collectionRaw = req.query?.collection
+    if (!collectionRaw || typeof collectionRaw !== 'string') {
+      return new Response(JSON.stringify({ error: 'collection query parameter required' }), { status: 400 })
+    }
+    const collection: string = collectionRaw
 
-    return Response.json(status)
+    try {
+      // 3️⃣ Fetch workflows for the collection
+      const workflowsRes = await req.payload.find({
+        collection: 'workflows',
+        where: { collection: { equals: collection } },
+        depth: 2,
+        overrideAccess: true,
+      })
+
+      const workflows = workflowsRes.docs
+      if (!workflows.length) {
+        return new Response(JSON.stringify({ status: [] }), { status: 200 })
+      }
+
+      // 4️⃣ Fetch status for all workflows
+      const status = await Promise.all(
+        workflows.map(async (workflow) => {
+          const stepsStatus = await getWorkflowStatus(req.payload, workflow.id, docId)
+          return {
+            workflowId: workflow.id,
+            workflowName: workflow.name,
+            steps: stepsStatus || [],
+          }
+        })
+      )
+
+      // 5️⃣ Return workflow status
+      return new Response(JSON.stringify(status), { status: 200 })
+    } catch (err) {
+      console.error('[Workflow] Failed to fetch workflow status:', err)
+      return new Response(JSON.stringify({ error: 'Failed to fetch workflow status' }), { status: 500 })
+    }
   },
 }
-
-// Router for Express-style endpoints (optional if you want to use in Payload's endpoints array)
-export const workflowRouter = Router()
-workflowRouter.post('/trigger', triggerWorkflowEndpoint.handler)
-workflowRouter.get('/status/:docId', workflowStatusEndpoint.handler)
