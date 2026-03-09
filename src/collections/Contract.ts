@@ -2,6 +2,8 @@
 import type { CollectionConfig, PayloadRequest } from 'payload'
 import { triggerWorkflow } from '../plugins/workflowEngine'
 
+type UserRole = 'admin' | 'reviewer' | 'approver'
+
 export const Contract: CollectionConfig = {
   slug: 'contract',
   admin: {
@@ -9,22 +11,21 @@ export const Contract: CollectionConfig = {
     defaultColumns: ['title', 'status', 'workflowPanel'],
   },
 
-  // --- Type-safe access rules ---
   access: {
     read: ({ req }) => {
-      const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
-      return user ? ['admin', 'reviewer', 'approver'].includes(user.role!) : false
+      const user = req.user as { role?: UserRole } | null
+      return user?.role ? ['admin', 'reviewer', 'approver'].includes(user.role) : false
     },
     create: ({ req }) => {
-      const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
+      const user = req.user as { role?: UserRole } | null
       return user?.role === 'admin'
     },
     update: ({ req }) => {
-      const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
-      return user ? ['admin', 'reviewer', 'approver'].includes(user.role!) : false
+      const user = req.user as { role?: UserRole } | null
+      return user?.role ? ['admin', 'reviewer', 'approver'].includes(user.role) : false
     },
     delete: ({ req }) => {
-      const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
+      const user = req.user as { role?: UserRole } | null
       return user?.role === 'admin'
     },
   },
@@ -44,7 +45,7 @@ export const Contract: CollectionConfig = {
       access: {
         update: ({ req }) => {
           const user = req.user as { role?: 'admin' | 'approver' } | null
-          return user ? ['admin', 'approver'].includes(user.role!) : false
+          return user?.role ? ['admin', 'approver'].includes(user.role) : false
         },
       },
     },
@@ -66,15 +67,20 @@ export const Contract: CollectionConfig = {
     afterChange: [
       async ({ doc, req }: { doc: any; req: PayloadRequest }) => {
         if (!doc || !req?.payload) {
-          return console.warn('[Contract Hook] No document or payload instance')
+          console.warn('[Contract Hook] No doc or payload instance')
+          return
         }
 
-        console.log('[Contract Hook] afterChange fired for doc:', doc.id)
+        console.log('[Contract Hook] afterChange fired for doc:', doc.id, 'status:', doc.status)
 
         try {
-          // TS-safe call: payload, collectionSlug, docId, optional doc
-          await triggerWorkflow(req.payload, 'contract', doc.id, doc)
-          console.log('[Contract Hook] Workflow triggered for contract draft:', doc.id)
+          // Only trigger workflow for draft contracts
+          if (doc.status === 'draft') {
+            await triggerWorkflow(req.payload, 'contract', doc.id, doc)
+            console.log('[Contract Hook] Workflow triggered for contract draft:', doc.id)
+          } else {
+            console.log('[Contract Hook] Contract status not draft, skipping workflow')
+          }
         } catch (err) {
           console.error('[Contract Hook] Workflow trigger failed:', err)
         }
