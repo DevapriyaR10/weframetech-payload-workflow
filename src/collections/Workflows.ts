@@ -1,38 +1,56 @@
 import type { CollectionConfig } from 'payload'
 
-export const Workflows: CollectionConfig = {
-  slug: 'workflows',
+export const WorkflowLogs: CollectionConfig = {
+  slug: 'workflowLogs',
 
   admin: {
-    useAsTitle: 'name',
-    defaultColumns: ['name', 'collection'],
+    useAsTitle: 'action',
+    defaultColumns: [
+      'workflow',
+      'documentId',
+      'stepName',
+      'user',
+      'action',
+      'createdAt',
+    ],
   },
 
   access: {
+    // Only system (workflow engine) should create logs
+    create: () => false,
+
+    // Logs should never be edited
+    update: () => false,
+
+    // Logs should never be deleted
+    delete: () => false,
+
+    // Only logged-in users can read logs
     read: ({ req }) => {
       if (!req.user) return false
-      return ['admin', 'reviewer', 'approver'].includes(req.user.role)
-    },
 
-    create: ({ req }) => {
-      if (!req.user) return false
-      return req.user.role === 'admin'
-    },
+      // Admin can see all logs
+      if (req.user.role === 'admin') return true
 
-    update: ({ req }) => {
-      if (!req.user) return false
-      return req.user.role === 'admin'
-    },
-
-    delete: ({ req }) => {
-      if (!req.user) return false
-      return req.user.role === 'admin'
+      // Reviewer / Approver can only see their own logs
+      return {
+        user: {
+          equals: req.user.id,
+        },
+      }
     },
   },
 
   fields: [
     {
-      name: 'name',
+      name: 'workflow',
+      type: 'relationship',
+      relationTo: 'workflows',
+      required: true,
+    },
+
+    {
+      name: 'documentId',
       type: 'text',
       required: true,
     },
@@ -41,86 +59,46 @@ export const Workflows: CollectionConfig = {
       name: 'collection',
       type: 'text',
       required: true,
-      admin: {
-        description: 'Collection slug this workflow applies to',
-      },
     },
 
     {
-      name: 'steps',
-      type: 'array',
-      minRows: 1,
-      fields: [
-        {
-          name: 'name',
-          type: 'text',
-          required: true,
-        },
+      name: 'stepName',
+      type: 'text',
+      required: true,
+    },
 
-        {
-          name: 'assignee',
-          type: 'relationship',
-          relationTo: 'users',
-          required: true,
-        },
+    {
+      name: 'user',
+      type: 'relationship',
+      relationTo: 'users',
+      required: true,
+    },
 
-        {
-          name: 'role',
-          type: 'select',
-          options: [
-            { label: 'Admin', value: 'admin' },
-            { label: 'Reviewer', value: 'reviewer' },
-            { label: 'Approver', value: 'approver' },
-          ],
-        },
-
-        {
-          name: 'stepType',
-          type: 'select',
-          options: [
-            { label: 'Approval', value: 'approval' },
-            { label: 'Review', value: 'review' },
-            { label: 'Sign-Off', value: 'sign-off' },
-            { label: 'Comment-Only', value: 'comment-only' },
-          ],
-          required: true,
-        },
-
-        {
-          name: 'conditions',
-          type: 'array',
-          fields: [
-            {
-              name: 'field',
-              type: 'text',
-              required: true,
-            },
-            {
-              name: 'operator',
-              type: 'select',
-              options: [
-                { label: '=', value: 'eq' },
-                { label: '!=', value: 'neq' },
-                { label: '>', value: 'gt' },
-                { label: '<', value: 'lt' },
-              ],
-            },
-            {
-              name: 'value',
-              type: 'text',
-              required: true,
-            },
-          ],
-        },
-
-        {
-          name: 'slaHours',
-          type: 'number',
-          admin: {
-            description: 'Optional SLA in hours',
-          },
-        },
+    {
+      name: 'action',
+      type: 'select',
+      options: [
+        { label: 'Pending', value: 'pending' },
+        { label: 'Approved', value: 'approved' },
+        { label: 'Rejected', value: 'rejected' },
+        { label: 'Commented', value: 'commented' },
       ],
+      required: true,
+      defaultValue: 'pending',
+    },
+
+    {
+      name: 'comment',
+      type: 'textarea',
+    },
+
+    {
+      name: 'createdAt',
+      type: 'date',
+      admin: {
+        readOnly: true,
+      },
+      defaultValue: () => new Date(),
     },
   ],
 }
