@@ -34,6 +34,7 @@ export default buildConfig({
     Contract,
   ],
 
+  // ✅ Pass Endpoint objects directly
   endpoints: [
     triggerWorkflowEndpoint,
     workflowStatusEndpoint,
