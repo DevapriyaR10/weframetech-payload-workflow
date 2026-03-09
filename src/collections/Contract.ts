@@ -1,75 +1,60 @@
 import type { CollectionConfig } from 'payload'
+import { triggerWorkflow } from '../plugins/workflowEngine'
+import payload from 'payload'
 
 export const Contract: CollectionConfig = {
   slug: 'contract',
-
-  admin: {
-    useAsTitle: 'title',
-  },
+  admin: { useAsTitle: 'title' },
 
   access: {
-    read: ({ req }) => {
-      // All roles can read contracts
-      if (!req.user) return false
-      return ['admin', 'reviewer', 'approver'].includes(req.user.role)
-    },
-
-    create: ({ req }) => {
-      // Only admin can create contracts
-      return req.user?.role === 'admin'
-    },
-
-    update: ({ req }) => {
-  const role = req.user?.role
-  if (!role) return false
-
-  return ['admin', 'reviewer', 'approver'].includes(role)
-},
-
-    delete: ({ req }) => {
-      // Only admin can delete
-      return req.user?.role === 'admin'
-    },
+    read: ({ req }) => req.user ? ['admin','reviewer','approver'].includes(req.user.role) : false,
+    create: ({ req }) => req.user?.role === 'admin',
+    update: ({ req }) => req.user ? ['admin','reviewer','approver'].includes(req.user.role) : false,
+    delete: ({ req }) => req.user?.role === 'admin',
   },
 
   fields: [
-    {
-      name: 'title',
-      type: 'text',
-      required: true,
-    },
-
-    {
-      name: 'amount',
-      type: 'number',
-      required: true,
-    },
-
+    { name: 'title', type: 'text', required: true },
+    { name: 'amount', type: 'number', required: true },
     {
       name: 'status',
       type: 'select',
       options: [
         { label: 'Draft', value: 'draft' },
-        { label: 'Finalized', value: 'finalized' },
+        { label: 'Finalized', value: 'finalized' }
       ],
       defaultValue: 'draft',
-
-      // Only admin + approver can change status
       access: {
-  update: ({ req }) => {
-    if (!req.user) return false
-    return ['admin', 'approver'].includes(req.user.role)
-  }
-},
+        update: ({ req }) => req.user ? ['admin','approver'].includes(req.user.role) : false
+      }
     },
+    // Workflow Panel UI
+    {
+      name: 'workflowPanel',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: '@/components/WorkflowPanel', // your workflow panel component
+        }
+      }
+    }
   ],
 
   hooks: {
     afterChange: [
       async ({ doc, req }) => {
-        const { triggerWorkflow } = await import('../plugins/workflowEngine')
-        await triggerWorkflow(doc, 'contract', req)
-      },
-    ],
+        if (!doc) return console.warn('[Contract Hook] No document in afterChange hook')
+
+        console.log('[Contract Hook] afterChange fired for doc:', doc.id)
+
+        const payloadInstance = req?.payload || payload
+        try {
+          // Explicitly pass 'contract' as collection slug
+          await triggerWorkflow(doc, payloadInstance, req, 'contract')
+        } catch (err) {
+          console.error('[Contract Hook] Workflow trigger failed:', err)
+        }
+      }
+    ]
   },
 }
