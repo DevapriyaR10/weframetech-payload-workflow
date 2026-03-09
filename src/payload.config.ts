@@ -11,7 +11,10 @@ import { Blog } from './collections/Blog'
 import { Workflows } from './collections/Workflows'
 import { WorkflowLogs } from './collections/WorkflowLogs'
 import { Contract } from './collections/Contract'
-import { workflowRouter } from './plugins/workflowAPI'
+
+// ✅ Import Payload Endpoints, not Express Router
+import { triggerWorkflowEndpoint, workflowStatusEndpoint } from './plugins/workflowAPI'
+
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
@@ -22,15 +25,33 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Workflows, WorkflowLogs, Blog, Contract],
+
+  collections: [
+    Users,
+    Workflows,
+    WorkflowLogs,
+    Blog,
+    Contract,
+  ],
+
+  endpoints: [
+    triggerWorkflowEndpoint,
+    workflowStatusEndpoint,
+  ],
+
   editor: lexicalEditor(),
+
   secret: process.env.PAYLOAD_SECRET || '',
+
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
+
   db: mongooseAdapter({
     url: process.env.DATABASE_URL || '',
   }),
+
   sharp,
+
   plugins: [],
 })
