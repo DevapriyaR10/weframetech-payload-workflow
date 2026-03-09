@@ -1,3 +1,4 @@
+// src/collections/Blog.ts
 import type { CollectionConfig } from 'payload'
 import { triggerWorkflow } from '../plugins/workflowEngine'
 import payload from 'payload'
@@ -9,7 +10,6 @@ export const Blog: CollectionConfig = {
     defaultColumns: ['title', 'status', 'workflowPanel'],
   },
 
-  // --- Type-safe access rules ---
   access: {
     read: ({ req }) => {
       const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
@@ -48,7 +48,6 @@ export const Blog: CollectionConfig = {
       },
     },
 
-    // Make content a simple text field for admin usage
     {
       name: 'content',
       type: 'text',
@@ -58,34 +57,36 @@ export const Blog: CollectionConfig = {
       },
     },
 
-    // Workflow Panel (UI component)
+    // Workflow Panel for UI
     {
-  name: 'workflowPanel',
-  type: 'ui',
-  label: 'Workflow Panel',
-  admin: {
-    components: {
-      Field: '@/components/WorkflowPanel',
+      name: 'workflowPanel',
+      type: 'ui',
+      label: 'Workflow Panel',
+      admin: {
+        components: {
+          Field: '@/components/WorkflowPanel', // your custom React component
+        },
+      },
     },
-  },
-}
   ],
 
   hooks: {
     afterChange: [
       async ({ doc, req }) => {
-        if (!doc) {
-          console.warn('[Blog Hook] No document in afterChange hook')
-          return
-        }
+        if (!doc) return
 
         console.log('[Blog Hook] afterChange fired for doc:', doc.id)
 
-        const payloadInstance = req?.payload || payload
-
         try {
-          // Trigger workflow for this blog document
-          await triggerWorkflow(doc, payloadInstance, req, 'blog')
+          const payloadInstance = req?.payload || payload
+
+          // Only trigger workflow for drafts
+          if (doc.status === 'draft') {
+            await triggerWorkflow(doc.id, 'blog', req)
+            console.log('[Blog Hook] Workflow triggered for blog draft:', doc.id)
+          } else {
+            console.log('[Blog Hook] Blog status not draft, skipping workflow')
+          }
         } catch (err) {
           console.error('[Blog Hook] Workflow trigger failed:', err)
         }
