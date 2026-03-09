@@ -34,9 +34,9 @@ export const triggerWorkflow = async (
 
   console.log('[Workflow] Triggering workflow for document:', doc.id, 'in collection:', slug)
 
-  // Fetch workflows for this collection
+  // ✅ TS-safe: use `as any` for custom collections
   const workflowsRes = await payload.find({
-    collection: 'workflows',
+    collection: 'workflows' as any,
     where: { collection: { equals: slug } },
     depth: 2,
     overrideAccess: true,
@@ -71,7 +71,7 @@ export const triggerWorkflow = async (
 
       // Skip step if already logged
       const logsRes = await payload.find({
-        collection: 'workflowLogs',
+        collection: 'workflowLogs' as any,
         where: {
           workflow: { equals: workflow.id },
           stepName: { equals: step.name },
@@ -88,7 +88,7 @@ export const triggerWorkflow = async (
       // Create workflow log
       try {
         await payload.create({
-          collection: 'workflowLogs',
+          collection: 'workflowLogs' as any,
           data: {
             workflow: workflow.id,
             documentId: String(doc.id),
@@ -109,7 +109,11 @@ export const triggerWorkflow = async (
         let userEmail = ''
         const userId = typeof step.assignee === 'string' ? step.assignee : step.assignee.id
         if (userId) {
-          const userRes = await payload.findByID({ collection: 'users', id: userId, overrideAccess: true })
+          const userRes = await payload.findByID({
+            collection: 'users' as any,
+            id: userId,
+            overrideAccess: true,
+          })
           userEmail = userRes?.email || ''
         }
 
@@ -146,7 +150,7 @@ export const getWorkflowStatus = async (
 
   try {
     const logsRes = await payload.find({
-      collection: 'workflowLogs',
+      collection: 'workflowLogs' as any,
       where: {
         workflow: { equals: workflowId },
         documentId: { equals: String(docId) },
