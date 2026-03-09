@@ -1,3 +1,4 @@
+// src/payload.config.ts
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
@@ -12,8 +13,8 @@ import { Workflows } from './collections/Workflows'
 import { WorkflowLogs } from './collections/WorkflowLogs'
 import { Contract } from './collections/Contract'
 
-// ✅ Import Payload Endpoints, not Express Router
-import { triggerWorkflowEndpoint, workflowStatusEndpoint } from './plugins/workflowAPI'
+// ✅ Import only the workflow status endpoint
+import { workflowStatusEndpoint } from './plugins/workflowAPI'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -34,9 +35,8 @@ export default buildConfig({
     Contract,
   ],
 
-  // ✅ Pass Endpoint objects directly
+  // ✅ Only workflow status endpoint is registered
   endpoints: [
-    triggerWorkflowEndpoint,
     workflowStatusEndpoint,
   ],
 
