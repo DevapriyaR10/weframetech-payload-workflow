@@ -1,5 +1,9 @@
 // src/collections/Workflows.ts
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, PayloadRequest } from 'payload'
+
+type MyUser = {
+  role?: 'admin' | 'reviewer' | 'approver'
+}
 
 export const Workflows: CollectionConfig = {
   slug: 'workflows',
@@ -8,14 +12,24 @@ export const Workflows: CollectionConfig = {
     defaultColumns: ['name', 'collection'],
   },
 
+  // --- Type-safe access rules ---
   access: {
     read: ({ req }) => {
-      const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
+      const user = req.user as MyUser | null
       return user ? ['admin', 'reviewer', 'approver'].includes(user.role!) : false
     },
-    create: ({ req }) => req.user?.role === 'admin',
-    update: ({ req }) => req.user?.role === 'admin',
-    delete: ({ req }) => req.user?.role === 'admin',
+    create: ({ req }) => {
+      const user = req.user as MyUser | null
+      return user?.role === 'admin'
+    },
+    update: ({ req }) => {
+      const user = req.user as MyUser | null
+      return user?.role === 'admin'
+    },
+    delete: ({ req }) => {
+      const user = req.user as MyUser | null
+      return user?.role === 'admin'
+    },
   },
 
   fields: [
