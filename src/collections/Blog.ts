@@ -1,6 +1,8 @@
 import type { CollectionConfig } from 'payload'
-import { triggerWorkflow } from '../plugins/workflowEngine'
 import payload from 'payload'
+import { triggerWorkflow } from '../plugins/workflowEngine'
+import WorkflowPanel from '../components/WorkflowPanel'
+import { lexicalEditor } from '@payloadcms/richtext-lexical'
 
 export const Blog: CollectionConfig = {
   slug: 'blog',
@@ -27,11 +29,16 @@ export const Blog: CollectionConfig = {
         update: ({ req }) => req.user ? ['admin','approver'].includes(req.user.role) : false
       }
     },
-    { name: 'content', type: 'richText', required: true },
+    {
+      name: 'content',
+      type: 'richText',
+      required: true,
+      admin: { components: { Field: lexicalEditor } }
+    },
     {
       name: 'workflowPanel',
       type: 'ui',
-      admin: { components: { Field: '@/components/WorkflowPanel' } },
+      admin: { components: { Field: WorkflowPanel } }
     }
   ],
 
@@ -45,7 +52,6 @@ export const Blog: CollectionConfig = {
         const payloadInstance = req?.payload || payload
 
         try {
-          // Pass collection slug explicitly
           await triggerWorkflow(doc, payloadInstance, req, 'blog')
         } catch (err) {
           console.error('[Blog Hook] Workflow trigger failed:', err)
