@@ -4,16 +4,19 @@
   "description": "A blank template to get started with Payload 3.0",
   "license": "MIT",
   "type": "module",
- "scripts": {
-  "build": "npm run generate:types && cross-env NODE_OPTIONS=--no-deprecation next build",
-  "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
-  "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev",
-  "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
-  "generate:types": "node -r ./ignore-css.cjs -r cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
-  "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
-  "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
-  "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
-},
+  "scripts": {
+    "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
+    "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev",
+    "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
+    "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
+    "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
+    "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
+    "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
+    "test": "pnpm run test:int && pnpm run test:e2e",
+    "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" playwright test --config=playwright.config.ts",
+    "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts"
+  },
   "dependencies": {
     "@payloadcms/db-mongodb": "3.79.0",
     "@payloadcms/next": "3.79.0",
