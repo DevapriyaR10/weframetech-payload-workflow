@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
-import { lexicalEditor } from '@payloadcms/richtext-lexical'
-import { triggerWorkflow } from '../plugins/workflowEngine'
 import payload from 'payload'
+import { triggerWorkflow } from '../plugins/workflowEngine'
+import BlogLexicalField from '../components/BlogLexicalField'
 
 export const Blog: CollectionConfig = {
   slug: 'blog',
@@ -41,7 +41,7 @@ export const Blog: CollectionConfig = {
       required: true,
       admin: {
         components: {
-          Field: lexicalEditor, // ensures it works in production
+          Field: BlogLexicalField, // TS-safe wrapper
         },
       },
     },
@@ -49,9 +49,8 @@ export const Blog: CollectionConfig = {
       name: 'workflowPanel',
       type: 'ui',
       admin: {
-        // Use relative path so Render can resolve it
         components: {
-          Field: '../../components/WorkflowPanel',
+          Field: '../../components/WorkflowPanel', // relative path for Render
         },
       },
     },
