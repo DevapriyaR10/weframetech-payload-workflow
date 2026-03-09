@@ -1,7 +1,6 @@
 // src/collections/Blog.ts
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, PayloadRequest } from 'payload'
 import { triggerWorkflow } from '../plugins/workflowEngine'
-import payload from 'payload'
 
 export const Blog: CollectionConfig = {
   slug: 'blog',
@@ -64,37 +63,29 @@ export const Blog: CollectionConfig = {
       label: 'Workflow Panel',
       admin: {
         components: {
-          Field: '@/components/WorkflowPanel', // your custom React component
+          Field: '@/components/WorkflowPanel',
         },
       },
     },
   ],
 
- hooks: {
-  afterChange: [
-    async ({ doc, req }) => {
-      if (!doc) return
+  hooks: {
+    afterChange: [
+      async ({ doc, req }: { doc: any; req: PayloadRequest }) => {
+        if (!doc || !req?.payload) return
 
-      // req.payload is the correct BasePayload instance
-      const basePayload = req?.payload
-
-      if (!basePayload) {
-        console.warn('[Blog Hook] Payload instance not found')
-        return
-      }
-
-      try {
-        if (doc.status === 'draft') {
-          // Pass payload, collection slug, and doc ID
-          await triggerWorkflow(basePayload, 'blog', doc.id)
-          console.log('[Blog Hook] Workflow triggered for blog draft:', doc.id)
-        } else {
-          console.log('[Blog Hook] Blog status not draft, skipping workflow')
+        try {
+          if (doc.status === 'draft') {
+            // TS-safe call to new workflowEngine
+            await triggerWorkflow(req.payload, 'blog', doc.id, doc)
+            console.log('[Blog Hook] Workflow triggered for blog draft:', doc.id)
+          } else {
+            console.log('[Blog Hook] Blog status not draft, skipping workflow')
+          }
+        } catch (err) {
+          console.error('[Blog Hook] Workflow trigger failed:', err)
         }
-      } catch (err) {
-        console.error('[Blog Hook] Workflow trigger failed:', err)
-      }
-    },
-  ],
-},
+      },
+    ],
+  },
 }
