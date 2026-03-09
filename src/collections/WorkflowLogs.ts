@@ -10,21 +10,14 @@ export const WorkflowLogs: CollectionConfig = {
 
   // --- Type-safe access rules ---
   access: {
-    // Only system (workflow engine) creates logs
-    create: () => false,
-
-    // Logs cannot be updated
-    update: () => false,
-
-    // Logs cannot be deleted
-    delete: () => false,
-
-    // Only logged-in users can read logs
+    create: () => false, // Only workflow engine creates logs
+    update: () => false, // Logs cannot be updated
+    delete: () => false, // Logs cannot be deleted
     read: ({ req }) => {
       const user = req.user as { id: string; role?: 'admin' | 'reviewer' | 'approver' } | null
       if (!user) return false
 
-      // Admin can see all logs
+      // Admin sees all logs
       if (user.role === 'admin') return true
 
       // Reviewer / Approver sees only their own logs
@@ -36,7 +29,7 @@ export const WorkflowLogs: CollectionConfig = {
     {
       name: 'workflow',
       type: 'relationship',
-      relationTo: 'workflows',
+      relationTo: ['workflows'], // ✅ TS-safe as CollectionSlug[]
       required: true,
       admin: { label: 'Workflow Reference' },
     },
@@ -65,7 +58,7 @@ export const WorkflowLogs: CollectionConfig = {
     {
       name: 'user',
       type: 'relationship',
-      relationTo: 'users',
+      relationTo: ['users'],
       required: true,
       admin: { label: 'Performed By' },
     },
@@ -81,6 +74,7 @@ export const WorkflowLogs: CollectionConfig = {
       ],
       required: true,
       defaultValue: 'pending',
+      admin: { label: 'Action Taken' },
     },
 
     {
