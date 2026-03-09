@@ -6,37 +6,28 @@ export const Users: CollectionConfig = {
 
   admin: {
     useAsTitle: 'email',
+    defaultColumns: ['name', 'email', 'role'],
   },
 
+  // --- Type-safe access rules ---
   access: {
-    
     create: ({ req }) => {
-      return req.user?.role === 'admin'
+      const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
+      return user?.role === 'admin'
     },
-
-   
     delete: ({ req }) => {
-      return req.user?.role === 'admin'
+      const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
+      return user?.role === 'admin'
     },
-
-    
     read: ({ req }) => {
-      if (req.user?.role === 'admin') return true
-      return {
-        id: {
-          equals: req.user?.id,
-        },
-      }
+      const user = req.user as { id: string; role?: 'admin' | 'reviewer' | 'approver' } | null
+      if (user?.role === 'admin') return true
+      return user ? { id: { equals: user.id } } : false
     },
-
-  
     update: ({ req }) => {
-      if (req.user?.role === 'admin') return true
-      return {
-        id: {
-          equals: req.user?.id,
-        },
-      }
+      const user = req.user as { id: string; role?: 'admin' | 'reviewer' | 'approver' } | null
+      if (user?.role === 'admin') return true
+      return user ? { id: { equals: user.id } } : false
     },
   },
 
@@ -45,6 +36,9 @@ export const Users: CollectionConfig = {
       name: 'name',
       type: 'text',
       required: true,
+      admin: {
+        description: 'Full name of the user',
+      },
     },
     {
       name: 'role',
@@ -56,6 +50,9 @@ export const Users: CollectionConfig = {
         { label: 'Approver', value: 'approver' },
       ],
       defaultValue: 'reviewer',
+      admin: {
+        description: 'Role determines access permissions',
+      },
     },
   ],
 }
