@@ -5,39 +5,30 @@ export const WorkflowLogs: CollectionConfig = {
 
   admin: {
     useAsTitle: 'action',
-    defaultColumns: [
-      'workflow',
-      'documentId',
-      'stepName',
-      'user',
-      'action',
-      'createdAt',
-    ],
+    defaultColumns: ['workflow', 'documentId', 'stepName', 'user', 'action', 'createdAt'],
   },
 
+  // --- Type-safe access rules ---
   access: {
-    // Only system (workflow engine) should create logs
+    // Only system (workflow engine) creates logs
     create: () => false,
 
-    // Logs should never be edited
+    // Logs cannot be updated
     update: () => false,
 
-    // Logs should never be deleted
+    // Logs cannot be deleted
     delete: () => false,
 
     // Only logged-in users can read logs
     read: ({ req }) => {
-      if (!req.user) return false
+      const user = req.user as { id: string; role?: 'admin' | 'reviewer' | 'approver' } | null
+      if (!user) return false
 
       // Admin can see all logs
-      if (req.user.role === 'admin') return true
+      if (user.role === 'admin') return true
 
-      // Reviewer / Approver can only see their own logs
-      return {
-        user: {
-          equals: req.user.id,
-        },
-      }
+      // Reviewer / Approver sees only their own logs
+      return { user: { equals: user.id } }
     },
   },
 
@@ -47,24 +38,28 @@ export const WorkflowLogs: CollectionConfig = {
       type: 'relationship',
       relationTo: 'workflows',
       required: true,
+      admin: { label: 'Workflow Reference' },
     },
 
     {
       name: 'documentId',
       type: 'text',
       required: true,
+      admin: { label: 'Document ID' },
     },
 
     {
       name: 'collection',
       type: 'text',
       required: true,
+      admin: { label: 'Collection Slug' },
     },
 
     {
       name: 'stepName',
       type: 'text',
       required: true,
+      admin: { label: 'Workflow Step Name' },
     },
 
     {
@@ -72,6 +67,7 @@ export const WorkflowLogs: CollectionConfig = {
       type: 'relationship',
       relationTo: 'users',
       required: true,
+      admin: { label: 'Performed By' },
     },
 
     {
@@ -90,14 +86,13 @@ export const WorkflowLogs: CollectionConfig = {
     {
       name: 'comment',
       type: 'textarea',
+      admin: { label: 'Comment / Notes' },
     },
 
     {
       name: 'createdAt',
       type: 'date',
-      admin: {
-        readOnly: true,
-      },
+      admin: { readOnly: true, label: 'Created At' },
       defaultValue: () => new Date(),
     },
   ],
