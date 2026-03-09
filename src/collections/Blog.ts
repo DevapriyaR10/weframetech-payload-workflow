@@ -5,34 +5,23 @@ export const Blog: CollectionConfig = {
 
   admin: {
     useAsTitle: 'title',
+    defaultColumns: ['title', 'status'],
   },
 
   access: {
-    read: ({ req }) => {
-      if (!req.user) return false
-      return ['admin', 'reviewer', 'approver'].includes(req.user.role)
-    },
-
-    create: ({ req }) => {
-      if (!req.user) return false
-      return req.user.role === 'admin'
-    },
-
-    update: ({ req }) => {
-      if (!req.user) return false
-      return ['admin', 'reviewer', 'approver'].includes(req.user.role)
-    },
-
-    delete: ({ req }) => {
-      if (!req.user) return false
-      return req.user.role === 'admin'
-    },
+    read: ({ req }) =>
+      req.user ? ['admin', 'reviewer', 'approver'].includes(req.user.role) : false,
+    create: ({ req }) => req.user?.role === 'admin',
+    update: ({ req }) =>
+      req.user ? ['admin', 'reviewer', 'approver'].includes(req.user.role) : false,
+    delete: ({ req }) => req.user?.role === 'admin',
   },
 
   fields: [
     {
       type: 'tabs',
       tabs: [
+        // ---------------- Content Tab ----------------
         {
           label: 'Content',
           fields: [
@@ -50,20 +39,20 @@ export const Blog: CollectionConfig = {
               ],
               defaultValue: 'draft',
               access: {
-                update: ({ req }) => {
-                  if (!req.user) return false
-                  return ['admin', 'approver'].includes(req.user.role)
-                },
+                update: ({ req }) =>
+                  req.user ? ['admin', 'approver'].includes(req.user.role) : false,
               },
             },
             {
               name: 'content',
               type: 'richText',
               required: true,
+              admin: {}, // safe TS config
             },
           ],
         },
 
+        // ---------------- Workflow Tab ----------------
         {
           label: 'Workflow',
           fields: [
@@ -72,7 +61,7 @@ export const Blog: CollectionConfig = {
               type: 'ui',
               admin: {
                 components: {
-                  Field: '@/components/WorkflowPanel',
+                  Field: '@/components/WorkflowPanel', // ensure default export
                 },
               },
             },
@@ -85,8 +74,12 @@ export const Blog: CollectionConfig = {
   hooks: {
     afterChange: [
       async ({ doc, req }) => {
-        const { triggerWorkflow } = await import('../plugins/workflowEngine')
-        await triggerWorkflow(doc, 'blog', req)
+        try {
+          const { triggerWorkflow } = await import('../plugins/workflowEngine')
+          await triggerWorkflow(doc, 'blog', req)
+        } catch (err) {
+          console.error('Workflow trigger failed:', err)
+        }
       },
     ],
   },
