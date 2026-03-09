@@ -70,16 +70,23 @@ export const Blog: CollectionConfig = {
     },
   ],
 
-  hooks: {
+ hooks: {
   afterChange: [
     async ({ doc, req }) => {
       if (!doc) return
 
-      const payloadInstance = req?.payload || payload
+      // req.payload is the correct BasePayload instance
+      const basePayload = req?.payload
+
+      if (!basePayload) {
+        console.warn('[Blog Hook] Payload instance not found')
+        return
+      }
 
       try {
         if (doc.status === 'draft') {
-          await triggerWorkflow(payloadInstance, req, 'blog', doc.id)
+          // Pass payload, collection slug, and doc ID
+          await triggerWorkflow(basePayload, 'blog', doc.id)
           console.log('[Blog Hook] Workflow triggered for blog draft:', doc.id)
         } else {
           console.log('[Blog Hook] Blog status not draft, skipping workflow')
