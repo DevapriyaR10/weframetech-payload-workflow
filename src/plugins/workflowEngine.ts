@@ -1,3 +1,4 @@
+// src/plugins/workflowEngine.ts
 import type { Payload } from 'payload'
 
 type Condition = {
@@ -17,6 +18,9 @@ type Workflow = {
   steps: Step[]
 }
 
+/**
+ * Trigger workflow steps for a document
+ */
 export const triggerWorkflow = async (
   doc: Record<string, any>,
   payload: Payload,
@@ -30,7 +34,7 @@ export const triggerWorkflow = async (
 
   console.log('[Workflow] Triggering workflow for document:', doc.id, 'in collection:', slug)
 
-  // 1️⃣ Fetch workflows for this collection
+  // Fetch workflows for this collection
   const workflowsRes = await payload.find({
     collection: 'workflows',
     where: { collection: { equals: slug } },
@@ -45,7 +49,7 @@ export const triggerWorkflow = async (
     for (const step of workflow.steps || []) {
       let conditionsMet = true
 
-      // 2️⃣ Evaluate conditions if any
+      // Evaluate conditions if any
       if (step.conditions?.length) {
         for (const cond of step.conditions) {
           const docValue = doc[cond.field]
@@ -65,7 +69,7 @@ export const triggerWorkflow = async (
 
       if (!conditionsMet) continue
 
-      // 3️⃣ Skip step if already logged
+      // Skip step if already logged
       const logsRes = await payload.find({
         collection: 'workflowLogs',
         where: {
@@ -81,7 +85,7 @@ export const triggerWorkflow = async (
         continue
       }
 
-      // 4️⃣ Create workflow log
+      // Create workflow log
       try {
         await payload.create({
           collection: 'workflowLogs',
@@ -100,7 +104,7 @@ export const triggerWorkflow = async (
         console.error('[Workflow] Failed to create workflow log:', err)
       }
 
-      // 5️⃣ Send notification email
+      // Send notification email
       try {
         let userEmail = ''
         const userId = typeof step.assignee === 'string' ? step.assignee : step.assignee.id
@@ -127,5 +131,38 @@ export const triggerWorkflow = async (
       // Stop after first matching step
       break
     }
+  }
+}
+
+/**
+ * Get workflow status for a document
+ */
+export const getWorkflowStatus = async (
+  payload: Payload,
+  workflowId: string,
+  docId: string
+) => {
+  if (!payload) return null
+
+  try {
+    const logsRes = await payload.find({
+      collection: 'workflowLogs',
+      where: {
+        workflow: { equals: workflowId },
+        documentId: { equals: String(docId) },
+      },
+      overrideAccess: true,
+    })
+
+    return logsRes.docs.map(log => ({
+      stepName: log.stepName,
+      status: log.action,
+      user: log.user,
+      createdAt: log.createdAt,
+      updatedAt: log.updatedAt,
+    }))
+  } catch (err) {
+    console.error('[Workflow] Failed to fetch workflow status:', err)
+    return null
   }
 }
