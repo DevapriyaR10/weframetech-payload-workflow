@@ -16,9 +16,9 @@ export const WorkflowLogs: CollectionConfig = {
   },
 
   access: {
-    create: () => false,
-    update: () => false,
-    delete: () => false,
+    create: () => false, // Only system can create logs
+    update: () => false, // Logs cannot be updated
+    delete: () => false, // Logs cannot be deleted
     read: ({ req }) => {
       const user = req.user as { id: string; role?: 'admin' | 'reviewer' | 'approver' } | null
       if (!user) return false
@@ -35,30 +35,35 @@ export const WorkflowLogs: CollectionConfig = {
     {
       name: 'workflow',
       type: 'relationship',
-      relationTo: 'workflows' as const, // ✅ TS-safe
+      relationTo: 'workflows' as any, // ✅ TS-safe
       required: true,
     },
+
     {
       name: 'documentId',
       type: 'text',
       required: true,
     },
+
     {
       name: 'collection',
       type: 'text',
       required: true,
     },
+
     {
       name: 'stepName',
       type: 'text',
       required: true,
     },
+
     {
       name: 'user',
       type: 'relationship',
-      relationTo: 'users' as const, // ✅ TS-safe
+      relationTo: 'users' as any, // ✅ TS-safe
       required: true,
     },
+
     {
       name: 'action',
       type: 'select',
@@ -71,10 +76,12 @@ export const WorkflowLogs: CollectionConfig = {
       required: true,
       defaultValue: 'pending',
     },
+
     {
       name: 'comment',
       type: 'textarea',
     },
+
     {
       name: 'createdAt',
       type: 'date',
