@@ -4,40 +4,62 @@ import payload from 'payload'
 
 export const Contract: CollectionConfig = {
   slug: 'contract',
-  admin: { useAsTitle: 'title' },
+  admin: {
+    useAsTitle: 'title',
+    defaultColumns: ['title', 'status', 'workflowPanel'],
+  },
 
+  // --- Type-safe access rules ---
   access: {
-    read: ({ req }) => req.user ? ['admin','reviewer','approver'].includes(req.user.role) : false,
-    create: ({ req }) => req.user?.role === 'admin',
-    update: ({ req }) => req.user ? ['admin','reviewer','approver'].includes(req.user.role) : false,
-    delete: ({ req }) => req.user?.role === 'admin',
+    read: ({ req }) => {
+      const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
+      return user ? ['admin', 'reviewer', 'approver'].includes(user.role!) : false
+    },
+    create: ({ req }) => {
+      const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
+      return user?.role === 'admin'
+    },
+    update: ({ req }) => {
+      const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
+      return user ? ['admin', 'reviewer', 'approver'].includes(user.role!) : false
+    },
+    delete: ({ req }) => {
+      const user = req.user as { role?: 'admin' | 'reviewer' | 'approver' } | null
+      return user?.role === 'admin'
+    },
   },
 
   fields: [
     { name: 'title', type: 'text', required: true },
     { name: 'amount', type: 'number', required: true },
+
     {
       name: 'status',
       type: 'select',
       options: [
         { label: 'Draft', value: 'draft' },
-        { label: 'Finalized', value: 'finalized' }
+        { label: 'Finalized', value: 'finalized' },
       ],
       defaultValue: 'draft',
       access: {
-        update: ({ req }) => req.user ? ['admin','approver'].includes(req.user.role) : false
-      }
+        update: ({ req }) => {
+          const user = req.user as { role?: 'admin' | 'approver' } | null
+          return user ? ['admin', 'approver'].includes(user.role!) : false
+        },
+      },
     },
+
     // Workflow Panel UI
     {
       name: 'workflowPanel',
       type: 'ui',
+      label: 'Workflow Panel',
       admin: {
         components: {
           Field: '@/components/WorkflowPanel', // your workflow panel component
-        }
-      }
-    }
+        },
+      },
+    },
   ],
 
   hooks: {
@@ -54,7 +76,7 @@ export const Contract: CollectionConfig = {
         } catch (err) {
           console.error('[Contract Hook] Workflow trigger failed:', err)
         }
-      }
-    ]
+      },
+    ],
   },
 }
