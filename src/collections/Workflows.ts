@@ -1,5 +1,5 @@
 // src/collections/Workflows.ts
-import type { CollectionConfig, PayloadRequest } from 'payload'
+import type { CollectionConfig } from 'payload'
 
 type MyUser = {
   role?: 'admin' | 'reviewer' | 'approver'
@@ -46,12 +46,12 @@ export const Workflows: CollectionConfig = {
         description: 'Collection slug this workflow applies to',
       },
     },
-
     {
       name: 'steps',
       type: 'array',
       label: 'Workflow Steps',
-      minRows: 1,
+      minRows: 0, // <-- dev-optimized: faster admin load
+      admin: { initCollapsed: true },
       fields: [
         {
           name: 'name',
@@ -94,6 +94,8 @@ export const Workflows: CollectionConfig = {
           name: 'conditions',
           type: 'array',
           label: 'Conditions',
+          minRows: 0, // <-- dev-optimized
+          admin: { initCollapsed: true },
           fields: [
             { name: 'field', type: 'text', required: true },
             {
