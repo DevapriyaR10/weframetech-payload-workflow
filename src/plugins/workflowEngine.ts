@@ -1,5 +1,5 @@
 // src/plugins/workflowEngine.ts
-import type { BasePayload, PayloadRequest } from 'payload'
+import type { BasePayload } from 'payload'
 
 type Condition = {
   field: string
@@ -22,15 +22,14 @@ type Workflow = {
  * Trigger workflow steps for a document
  */
 export const triggerWorkflow = async (
-  payload: BasePayload,       // Use BasePayload from hooks
-  collectionSlug: string,     // Collection slug of the document
-  docId: string,              // Document ID
-  docData?: Record<string, any> // Optional full document
+  payload: BasePayload,
+  collectionSlug: string,
+  docId: string,
+  docData?: Record<string, any>
 ) => {
   if (!payload) return console.warn('[Workflow] Payload instance missing')
 
   const doc = docData || (await payload.findByID({ collection: collectionSlug as any, id: docId }))
-
   if (!doc) return console.warn('[Workflow] Document not found')
 
   console.log('[Workflow] Triggering workflow for document:', doc.id, 'in collection:', collectionSlug)
@@ -47,30 +46,46 @@ export const triggerWorkflow = async (
   if (!workflows.length) return console.log('[Workflow] No workflows found for this collection')
 
   for (const workflow of workflows) {
+    console.log('[Workflow] Evaluating workflow:', workflow.id)
+
     for (const step of workflow.steps || []) {
+      console.log('[Workflow] Checking step:', step.name)
       let conditionsMet = true
 
       // Evaluate conditions if any
       if (step.conditions?.length) {
         for (const cond of step.conditions) {
           const docValue = doc[cond.field]
-          const val = typeof cond.value === 'string' && !isNaN(Number(cond.value))
-            ? Number(cond.value)
-            : cond.value
+          const val = typeof cond.value === 'string' && !isNaN(Number(cond.value)) ? Number(cond.value) : cond.value
+
+          // Log comparison
+          console.log(`[Workflow Debug] Condition: doc[${cond.field}] = ${docValue} ${cond.operator} ${val}`)
 
           switch (cond.operator) {
-            case 'eq': if (docValue != val) conditionsMet = false; break
-            case 'neq': if (docValue == val) conditionsMet = false; break
-            case 'gt': if (Number(docValue) <= Number(val)) conditionsMet = false; break
-            case 'lt': if (Number(docValue) >= Number(val)) conditionsMet = false; break
+            case 'eq':
+              if (docValue != val) conditionsMet = false
+              break
+            case 'neq':
+              if (docValue == val) conditionsMet = false
+              break
+            case 'gt':
+              if (Number(docValue) <= Number(val)) conditionsMet = false
+              break
+            case 'lt':
+              if (Number(docValue) >= Number(val)) conditionsMet = false
+              break
           }
-          if (!conditionsMet) break
+
+          if (!conditionsMet) {
+            console.log(`[Workflow Debug] Step "${step.name}" condition failed, skipping`)
+            break
+          }
         }
       }
 
       if (!conditionsMet) continue
 
-      // Skip step if already logged
+      // Skip if already logged
       const logsRes = await payload.find({
         collection: 'workflowLogs' as any,
         where: {
@@ -82,7 +97,7 @@ export const triggerWorkflow = async (
       })
 
       if (logsRes.totalDocs > 0) {
-        console.log(`[Workflow] Step "${step.name}" already logged. Skipping.`)
+        console.log(`[Workflow] Step "${step.name}" already logged for document ${doc.id}, skipping.`)
         continue
       }
 
@@ -100,7 +115,7 @@ export const triggerWorkflow = async (
           },
           overrideAccess: true,
         })
-        console.log(`[Workflow] Logged step: "${step.name}" for document ${doc.id}`)
+        console.log(`[Workflow] Logged step "${step.name}" for document ${doc.id}`)
       } catch (err) {
         console.error('[Workflow] Failed to create workflow log:', err)
       }
@@ -110,11 +125,7 @@ export const triggerWorkflow = async (
         let userEmail = ''
         const userId = typeof step.assignee === 'string' ? step.assignee : step.assignee.id
         if (userId) {
-          const userRes = await payload.findByID({
-            collection: 'users' as any,
-            id: userId,
-            overrideAccess: true,
-          })
+          const userRes = await payload.findByID({ collection: 'users' as any, id: userId, overrideAccess: true })
           userEmail = userRes?.email || ''
         }
 
@@ -136,38 +147,5 @@ export const triggerWorkflow = async (
       // Stop after first matching step
       break
     }
-  }
-}
-
-/**
- * Get workflow status for a document
- */
-export const getWorkflowStatus = async (
-  payload: BasePayload,
-  workflowId: string,
-  docId: string
-) => {
-  if (!payload) return null
-
-  try {
-    const logsRes = await payload.find({
-      collection: 'workflowLogs' as any,
-      where: {
-        workflow: { equals: workflowId },
-        documentId: { equals: String(docId) },
-      },
-      overrideAccess: true,
-    })
-
-    return logsRes.docs.map(log => ({
-      stepName: log.stepName,
-      status: log.action,
-      user: log.user,
-      createdAt: log.createdAt,
-      updatedAt: log.updatedAt,
-    }))
-  } catch (err) {
-    console.error('[Workflow] Failed to fetch workflow status:', err)
-    return null
   }
 }
